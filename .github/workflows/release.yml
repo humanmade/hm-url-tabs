@@ -41,9 +41,9 @@ jobs:
 
             - name: Replace __VERSION__ in plugin file
               run: |
-                  sed -i "s/__VERSION__/${{ steps.get_version.outputs.version }}/g" lottie-lite.php
+                  sed -i "s/__VERSION__/${{ steps.get_version.outputs.version }}/g" hm-url-tabs.php
                   echo "Updated plugin header:"
-                  cat lottie-lite.php | grep "Version:"
+                  cat hm-url-tabs.php | grep "Version:"
 
             - name: Build plugin
               run: npm run build
@@ -54,7 +54,7 @@ jobs:
                   git config --local user.name "github-actions[bot]"
 
                   # Add and commit the versioned file
-                  git add lottie-lite.php
+                  git add hm-url-tabs.php
                   git commit -m "Update version to ${{ steps.get_version.outputs.version }}"
 
                   # Delete the old tag and create a new one pointing to the new commit
@@ -67,14 +67,14 @@ jobs:
             - name: Create ZIP archive
               run: |
                   npm run plugin-zip
-                  mv lottie-lite.zip "lottie-lite-${{ steps.get_version.outputs.tag }}.zip"
-                  echo "Created: lottie-lite-${{ steps.get_version.outputs.tag }}.zip"
+                  mv hm-url-tabs.zip "hm-url-tabs-${{ steps.get_version.outputs.tag }}.zip"
+                  echo "Created: hm-url-tabs-${{ steps.get_version.outputs.tag }}.zip"
 
             - name: Upload ZIP to release
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ github.event.release.tag_name }}
                   files: |
-                      lottie-lite-${{ steps.get_version.outputs.tag }}.zip
+                      hm-url-tabs-${{ steps.get_version.outputs.tag }}.zip
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
