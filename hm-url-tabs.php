@@ -170,7 +170,8 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 	// Handle tab navigation links.
 	if ( $block['blockName'] === 'core/navigation-link' && ! empty( $block['attrs']['kind'] ) && in_array( $block['attrs']['kind'], [ 'tab', 'tab-home', 'tab-base' ], true ) ) {
 		$kind = $block['attrs']['kind'];
-		$endpoint = $block['attrs']['tabEndpoint'] ?: 'tab';
+		$endpoint = $block['attrs']['tabEndpoint'] ?? 'tab';
+		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
 		$tab_value = sanitize_title_with_dashes( $block['attrs']['url'] ?? '' );
 
 		// Get the current page URL.
@@ -226,6 +227,7 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 		$visibility = $block['attrs']['hmUrlTabVisibility'];
 		$condition = $visibility['condition'] ?? 'always';
 		$endpoint = $visibility['endpoint'] ?? 'tab';
+		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
 		$tab_value = sanitize_title_with_dashes( $visibility['tabUrl'] ?? '' );
 
 		$current_endpoint_value = get_current_endpoint_value( $endpoint );
