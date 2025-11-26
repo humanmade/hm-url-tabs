@@ -1,0 +1,31 @@
+{
+	"name": "hm-url-tabs",
+	"private": true,
+	"description": "Tab-based navigation with rewrite endpoints for conditional block visibility",
+	"main": "src/index.js",
+	"scripts": {
+		"build": "wp-scripts build src/editor.js src/frontend.js",
+		"start": "wp-scripts start src/editor.js src/frontend.js",
+		"format": "wp-scripts format",
+		"lint:css:fix": "wp-scripts lint-style --fix",
+		"lint:js:fix": "wp-scripts lint-js --fix",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"playground:start": "npx @wp-playground/cli server --blueprint=blueprint.json --port=9400 --auto-mount",
+		"test:e2e": "wp-scripts test-playwright",
+		"test:e2e:debug": "wp-scripts test-playwright --debug",
+		"test:e2e:watch": "wp-scripts test-playwright --watch"
+	},
+	"author": "Human Made Limited",
+	"license": "GPL-2.0-or-later",
+	"dependencies": {
+		"@babel/runtime": "^7.28.4",
+		"@wordpress/icons": "^11.2.0",
+		"@wordpress/scripts": "^28.6.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.49.0",
+		"@wordpress/e2e-test-utils-playwright": "^1.10.0"
+	}
+}

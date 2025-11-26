@@ -1,0 +1,9 @@
+node_modules/
+build/
+*.log
+.DS_Store
+vendor/
+composer.lock
+package-lock.json
+playwright-report/
+test-results/
