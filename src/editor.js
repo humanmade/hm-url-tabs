@@ -72,6 +72,68 @@ addFilter(
 );
 
 /**
+ * Add endpoint selector to tab navigation-link variations.
+ */
+const withTabEndpointSelector = createHigherOrderComponent( ( BlockEdit ) => {
+	return ( props ) => {
+		const { attributes, setAttributes, name } = props;
+
+		// Only add to navigation-link tab variations.
+		if (
+			name !== 'core/navigation-link' ||
+			! attributes?.kind ||
+			! [ 'tab', 'tab-base', 'tab-home' ].includes( attributes.kind )
+		) {
+			return <BlockEdit { ...props } />;
+		}
+
+		const endpoints =
+			window.hmUrlTabsData?.endpoints?.map( ( ep ) => ep.name ) || [];
+
+		// Only show selector when multiple endpoints are registered.
+		if ( endpoints.length <= 1 ) {
+			return <BlockEdit { ...props } />;
+		}
+
+		const { tabEndpoint = 'tab' } = attributes;
+
+		return (
+			<>
+				<BlockEdit { ...props } />
+				<InspectorControls>
+					<PanelBody
+						title={ __( 'Tab Settings', 'hm-url-tabs' ) }
+						initialOpen={ true }
+					>
+						<SelectControl
+							label={ __( 'Endpoint', 'hm-url-tabs' ) }
+							value={ tabEndpoint }
+							options={ endpoints.map( ( ep ) => ( {
+								label: ep,
+								value: ep,
+							} ) ) }
+							onChange={ ( value ) =>
+								setAttributes( { tabEndpoint: value } )
+							}
+							help={ __(
+								'The URL endpoint this tab uses.',
+								'hm-url-tabs'
+							) }
+						/>
+					</PanelBody>
+				</InspectorControls>
+			</>
+		);
+	};
+}, 'withTabEndpointSelector' );
+
+addFilter(
+	'editor.BlockEdit',
+	'hm-url-tabs/tab-endpoint-selector',
+	withTabEndpointSelector
+);
+
+/**
  * Add Tab Visibility controls to all blocks (except navigation-link).
  */
 const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
@@ -204,18 +266,23 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 									value: 'specific-tab',
 								},
 							] }
-							onChange={ ( value ) =>
-								setAttributes( {
-									hmUrlTabVisibility: {
-										...hmUrlTabVisibility,
-										condition: value,
-									},
-								} )
-							}
+							onChange={ ( value ) => {
+								const updated = {
+									...hmUrlTabVisibility,
+									condition: value,
+								};
+								// Clear endpoint and tabUrl when they are not needed.
+								if ( value === 'always' || value === 'no-endpoint' ) {
+									delete updated.endpoint;
+									delete updated.tabUrl;
+								}
+								setAttributes( { hmUrlTabVisibility: updated } );
+							} }
 						/>
 
 						{ showEndpointSelector &&
-							condition === 'specific-tab' && (
+							( condition === 'specific-tab' ||
+								condition === 'endpoint-empty' ) && (
 								<SelectControl
 									label={ __( 'Endpoint', 'hm-url-tabs' ) }
 									value={ endpoint }

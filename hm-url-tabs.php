@@ -95,11 +95,41 @@ add_action( 'wp_enqueue_scripts', function() : void {
 /**
  * Get the current endpoint value.
  *
+ * First checks the query var (set by WordPress rewrite rules).
+ * Falls back to parsing the request URI, since some rewrite
+ * configurations (e.g. overview on sector archives) don't
+ * reliably populate the query var.
+ *
  * @param string $endpoint_name The endpoint name to check.
- * @return string|null The endpoint value or null if not set.
+ * @return string|null The endpoint value, empty string if endpoint
+ *                     is present with no value, or null if not set.
  */
 function get_current_endpoint_value( string $endpoint_name = 'tab' ) : ?string {
-	return get_query_var( $endpoint_name, null );
+	// Parse the request URI for the endpoint segment. This is more
+	// reliable than get_query_var() because some rewrite configurations
+	// (e.g. overview on sector archives) don't reliably populate the
+	// query var, or WordPress may set it to '' even when the endpoint
+	// is not present in the URL.
+	$request_path = strtok( $_SERVER['REQUEST_URI'] ?? '', '?' );
+	$ep_segment   = '/' . $endpoint_name . '/';
+	$pos          = strpos( $request_path, $ep_segment );
+
+	if ( $pos !== false ) {
+		// Endpoint found in URL — extract anything after it.
+		$after = substr( $request_path, $pos + strlen( $ep_segment ) );
+		$after = trim( $after, '/' );
+
+		return $after !== '' ? $after : '';
+	}
+
+	// Endpoint not found in URL — check query var as fallback
+	// (e.g. when endpoint is passed as ?endpoint=value).
+	$value = get_query_var( $endpoint_name, null );
+	if ( $value !== null && $value !== '' ) {
+		return $value;
+	}
+
+	return null;
 }
 
 /**
@@ -174,10 +204,19 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
 		$tab_value = sanitize_title_with_dashes( $block['attrs']['url'] ?? '' );
 
-		// Get the current page URL.
-		$current_url = $_SERVER['REQUEST_URI'];
-		if ( strpos( $current_url, "/$endpoint/" ) !== false ) {
-			$current_url = explode( $endpoint, $current_url )[0];
+		// Get the current page base URL by stripping any registered endpoint
+		// segment. We check all registered endpoints (not just this block's)
+		// so that tab-home correctly finds the base URL even when its own
+		// tabEndpoint attribute differs from the active endpoint.
+		$current_url = strtok( $_SERVER['REQUEST_URI'], '?' );
+		$all_endpoints = get_endpoints();
+		foreach ( $all_endpoints as $ep ) {
+			$ep_segment = '/' . $ep['name'] . '/';
+			$pos = strpos( $current_url, $ep_segment );
+			if ( $pos !== false ) {
+				$current_url = trailingslashit( substr( $current_url, 0, $pos ) );
+				break;
+			}
 		}
 
 		// Build the tab URL.
@@ -195,20 +234,10 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 		// Use WP_HTML_Tag_Processor to update the href.
 		$processor = new WP_HTML_Tag_Processor( $block_content );
 		if ( $processor->next_tag( 'li' ) ) {
-			// Add active class if current tab matches.
-			$current_endpoint_value = get_current_endpoint_value( $endpoint );
-			$is_active = false;
-
-			if ( $kind === 'tab-home' && $current_endpoint_value === null ) {
-				// Home tab is active when no endpoint is present.
-				$is_active = true;
-			} elseif ( $kind === 'tab-base' && $current_endpoint_value === '' ) {
-				// Base tab is active when endpoint is present but empty.
-				$is_active = true;
-			} elseif ( $kind === 'tab' && sanitize_title_with_dashes( $current_endpoint_value ) === $tab_value ) {
-				// Regular tab is active when endpoint value matches.
-				$is_active = true;
-			}
+			// Determine if this tab is active by comparing
+			// the generated tab URL with the current request URI path.
+			$request_path = strtok( $_SERVER['REQUEST_URI'], '?' );
+			$is_active = untrailingslashit( $tab_url ) === untrailingslashit( $request_path );
 
 			if ( $is_active ) {
 				$processor->add_class( 'current-menu-item' );
@@ -216,6 +245,9 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 
 			$processor->next_tag( 'a' );
 			$processor->add_class( 'hm-url-tab-link' );
+			if ( $is_active ) {
+				$processor->add_class( 'hm-url-tab-active' );
+			}
 			$processor->set_attribute( 'href', $tab_url );
 		}
 
@@ -247,9 +279,15 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 				break;
 
 			case 'no-endpoint':
-				// Show only when endpoint is not in use at all.
-				if ( $current_endpoint_value !== null ) {
-					$should_hide = true;
+				// Show only when NO registered endpoint is active in the URL.
+				// Check all registered endpoints, not just the one stored in
+				// the block attribute, since it may be stale or irrelevant.
+				$all_endpoints = get_endpoints();
+				foreach ( $all_endpoints as $ep ) {
+					if ( get_current_endpoint_value( $ep['name'] ) !== null ) {
+						$should_hide = true;
+						break;
+					}
 				}
 				break;
 
