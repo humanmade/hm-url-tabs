@@ -7,8 +7,10 @@
 		"wp": "6.8"
 	},
 	"features": {
-		"networking": true
+		"networking": true,
+		"intl": true
 	},
+	"extraLibraries": [ "wp-cli" ],
 	"steps": [
 		{
 			"step": "installTheme",
@@ -27,6 +29,31 @@
 				"WP_DEBUG_LOG": true,
 				"SCRIPT_DEBUG": true
 			}
+		},
+		{
+			"step": "mkdir",
+			"path": "/wordpress/wp-content/mu-plugins"
+		},
+		{
+			"step": "cp",
+			"fromPath": "/wordpress/wp-content/plugins/hm-url-tabs/tests/fixtures/multiple-endpoints.php",
+			"toPath": "/wordpress/wp-content/mu-plugins/hm-url-tabs-multiple-endpoints.php"
+		},
+		{
+			"step": "wp-cli",
+			"command": "wp term create category \"Test Category\" --slug=test-category --description=\"Category for HM URL Tabs endpoint tests\""
+		},
+		{
+			"step": "wp-cli",
+			"command": "wp post create --post_type=post --post_title=\"Test Post\" --post_status=publish --post_content=\"Test content for endpoint tests.\""
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require '/wordpress/wp-load.php'; $cat_id = get_term_by( 'slug', 'test-category', 'category' )->term_id; $posts = get_posts( [ 'numberposts' => 1, 'post_status' => 'publish' ] ); if ( $posts ) { wp_set_post_terms( $posts[0]->ID, [ $cat_id ], 'category' ); } echo 'Post assigned to category.';"
+		},
+		{
+			"step": "wp-cli",
+			"command": "wp rewrite flush"
 		}
 	]
 }
