@@ -153,9 +153,9 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 		} = hmUrlTabVisibility;
 
 		// Registered endpoints from server data (outside useSelect, no hook dependency).
-		const registeredEndpoints =
-			window.hmUrlTabsData?.endpoints?.map( ( ep ) => ep.name ) ||
-			[ 'tab' ];
+		const registeredEndpoints = window.hmUrlTabsData?.endpoints?.map(
+			( ep ) => ep.name
+		) || [ 'tab' ];
 		const showEndpointSelector = registeredEndpoints.length > 1;
 
 		// Get tab navigation links from the page using getBlocksByName.

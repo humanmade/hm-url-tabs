@@ -73,7 +73,9 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 			await page.fill( '#user_login', 'admin' );
 			await page.fill( '#user_pass', 'password' );
 			await Promise.all( [
-				page.waitForURL( /wp-admin/, { waitUntil: 'domcontentloaded' } ),
+				page.waitForURL( /wp-admin/, {
+					waitUntil: 'domcontentloaded',
+				} ),
 				page.click( '#wp-submit' ),
 			] );
 		} );
@@ -89,7 +91,7 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				() =>
 					window.wp?.blocks?.getBlockType?.(
 						'core/navigation-link'
-					) != null,
+					) !== null,
 				{ timeout: 60000 }
 			);
 
@@ -124,9 +126,10 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 					paragraphBlock,
 				] );
 
-				const paragraphClientId = select(
-					'core/block-editor'
-				).getBlocksByName( 'core/paragraph' )[ 0 ];
+				const paragraphClientId =
+					select( 'core/block-editor' ).getBlocksByName(
+						'core/paragraph'
+					)[ 0 ];
 				if ( paragraphClientId ) {
 					dispatch( 'core/block-editor' ).selectBlock(
 						paragraphClientId
@@ -142,7 +145,9 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				{ hasText: 'Tab Visibility' }
 			);
 
-			if ( ! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) ) ) {
+			if (
+				! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) )
+			) {
 				test.skip( true, 'Tab Visibility panel not visible' );
 				return;
 			}
@@ -150,12 +155,17 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 			const panelToggle = tabVisibilityPanel.locator(
 				'.components-panel__body-title button'
 			);
-			if ( ( await panelToggle.getAttribute( 'aria-expanded' ) ) === 'false' ) {
+			if (
+				( await panelToggle.getAttribute( 'aria-expanded' ) ) ===
+				'false'
+			) {
 				await panelToggle.click();
 			}
 
 			// Select "Show for specific tab" condition.
-			const conditionSelect = tabVisibilityPanel.locator( 'select' ).first();
+			const conditionSelect = tabVisibilityPanel
+				.locator( 'select' )
+				.first();
 			await conditionSelect.selectOption( 'specific-tab' );
 
 			// The endpoint selector should now be visible since two
@@ -184,7 +194,7 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				() =>
 					window.wp?.blocks?.getBlockType?.(
 						'core/navigation-link'
-					) != null,
+					) !== null,
 				{ timeout: 60000 }
 			);
 
@@ -224,8 +234,7 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 
 				// Get the root client ID and insert blocks.
 				const rootClientId =
-					select( 'core/block-editor' ).getBlockOrder()[ 0 ] ||
-					'';
+					select( 'core/block-editor' ).getBlockOrder()[ 0 ] || '';
 				dispatch( 'core/block-editor' ).insertBlocks(
 					[ navBlock, paragraphBlock ],
 					undefined,
@@ -233,9 +242,10 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				);
 
 				// Select the paragraph block.
-				const paragraphClientId = select(
-					'core/block-editor'
-				).getBlocksByName( 'core/paragraph' )[ 0 ];
+				const paragraphClientId =
+					select( 'core/block-editor' ).getBlocksByName(
+						'core/paragraph'
+					)[ 0 ];
 				if ( paragraphClientId ) {
 					dispatch( 'core/block-editor' ).selectBlock(
 						paragraphClientId
@@ -252,7 +262,9 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				{ hasText: 'Tab Visibility' }
 			);
 
-			if ( ! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) ) ) {
+			if (
+				! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) )
+			) {
 				test.skip( true, 'Tab Visibility panel not visible' );
 				return;
 			}
@@ -260,16 +272,23 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 			const panelToggle = tabVisibilityPanel.locator(
 				'.components-panel__body-title button'
 			);
-			if ( ( await panelToggle.getAttribute( 'aria-expanded' ) ) === 'false' ) {
+			if (
+				( await panelToggle.getAttribute( 'aria-expanded' ) ) ===
+				'false'
+			) {
 				await panelToggle.click();
 			}
 
 			// Set condition to 'specific-tab'.
-			const conditionSelect = tabVisibilityPanel.locator( 'select' ).first();
+			const conditionSelect = tabVisibilityPanel
+				.locator( 'select' )
+				.first();
 			await conditionSelect.selectOption( 'specific-tab' );
 
 			// Select 'tab' endpoint — tab dropdown should include 'general'.
-			const endpointSelect = tabVisibilityPanel.locator( 'select' ).nth( 1 );
+			const endpointSelect = tabVisibilityPanel
+				.locator( 'select' )
+				.nth( 1 );
 			await endpointSelect.selectOption( 'tab' );
 
 			const tabSelect = tabVisibilityPanel.locator( 'select' ).nth( 2 );
@@ -300,7 +319,7 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				() =>
 					window.wp?.blocks?.getBlockType?.(
 						'core/navigation-link'
-					) != null,
+					) !== null,
 				{ timeout: 60000 }
 			);
 
@@ -340,9 +359,10 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 					paragraph,
 				] );
 
-				const paragraphClientId = select(
-					'core/block-editor'
-				).getBlocksByName( 'core/paragraph' )[ 0 ];
+				const paragraphClientId =
+					select( 'core/block-editor' ).getBlocksByName(
+						'core/paragraph'
+					)[ 0 ];
 				if ( paragraphClientId ) {
 					dispatch( 'core/block-editor' ).selectBlock(
 						paragraphClientId
@@ -357,7 +377,9 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 				{ hasText: 'Tab Visibility' }
 			);
 
-			if ( ! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) ) ) {
+			if (
+				! ( await tabVisibilityPanel.isVisible( { timeout: 3000 } ) )
+			) {
 				test.skip( true, 'Tab Visibility panel not visible' );
 				return;
 			}
@@ -365,11 +387,16 @@ test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
 			const panelToggle = tabVisibilityPanel.locator(
 				'.components-panel__body-title button'
 			);
-			if ( ( await panelToggle.getAttribute( 'aria-expanded' ) ) === 'false' ) {
+			if (
+				( await panelToggle.getAttribute( 'aria-expanded' ) ) ===
+				'false'
+			) {
 				await panelToggle.click();
 			}
 
-			const conditionSelect = tabVisibilityPanel.locator( 'select' ).first();
+			const conditionSelect = tabVisibilityPanel
+				.locator( 'select' )
+				.first();
 			await conditionSelect.selectOption( 'specific-tab' );
 
 			const tabSelect = tabVisibilityPanel.locator( 'select' ).last();
