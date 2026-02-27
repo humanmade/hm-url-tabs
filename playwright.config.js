@@ -10,12 +10,12 @@ module.exports = defineConfig( {
 	retries: process.env.CI ? 2 : 0,
 	workers: process.env.CI ? 1 : undefined,
 	reporter: [
-		[ 'html', { open: process.env.CI ? 'never' : 'on-failure' } ],
+		[ 'html', { open: 'never' } ],
 		[ 'json', { outputFile: 'test-results/results.json' } ],
 		[ 'list' ],
 	],
 	use: {
-		baseURL: process.env.WP_BASE_URL || 'http://localhost:9400',
+		baseURL: process.env.WP_BASE_URL || 'http://127.0.0.1:9400',
 		trace: 'on-first-retry',
 	},
 	projects: [

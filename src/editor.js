@@ -152,6 +152,12 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 			tabUrl = '',
 		} = hmUrlTabVisibility;
 
+		// Registered endpoints from server data (outside useSelect, no hook dependency).
+		const registeredEndpoints =
+			window.hmUrlTabsData?.endpoints?.map( ( ep ) => ep.name ) ||
+			[ 'tab' ];
+		const showEndpointSelector = registeredEndpoints.length > 1;
+
 		// Get tab navigation links from the page using getBlocksByName.
 		const { tabs, hasParentWithVisibility } = useSelect(
 			( select ) => {
@@ -167,7 +173,10 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 					'core/navigation-link'
 				);
 
-				// Filter to only tab variations and extract their data.
+				// Filter to only tab variations and extract their data,
+				// de-duplicating by endpoint + url + kind to handle
+				// multiple navigation blocks with the same tabs.
+				const seen = new Set();
 				const tabData = navLinkClientIds
 					.map( ( id ) => getBlock( id ) )
 					.filter(
@@ -182,7 +191,15 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 						endpoint: block.attributes.tabEndpoint || 'tab',
 						isHomeTab: block.attributes.kind === 'tab-home',
 						isBaseTab: block.attributes.kind === 'tab-base',
-					} ) );
+					} ) )
+					.filter( ( tab ) => {
+						const key = `${ tab.endpoint }:${ tab.url }:${ tab.isHomeTab }:${ tab.isBaseTab }`;
+						if ( seen.has( key ) ) {
+							return false;
+						}
+						seen.add( key );
+						return true;
+					} );
 
 				// Check if any parent block has tab visibility settings.
 				const parentIds = getBlockParents( clientId );
@@ -217,11 +234,6 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 		if ( hasParentWithVisibility ) {
 			return <BlockEdit { ...props } />;
 		}
-
-		const endpoints = Array.from(
-			new Set( tabs.map( ( tab ) => tab.endpoint ) )
-		);
-		const showEndpointSelector = endpoints.length > 1;
 
 		// Get tabs for the selected endpoint.
 		const tabsForEndpoint = tabs.filter(
@@ -272,34 +284,47 @@ const withTabVisibilityControls = createHigherOrderComponent( ( BlockEdit ) => {
 									condition: value,
 								};
 								// Clear endpoint and tabUrl when they are not needed.
-								if ( value === 'always' || value === 'no-endpoint' ) {
+								if (
+									value === 'always' ||
+									value === 'no-endpoint'
+								) {
 									delete updated.endpoint;
 									delete updated.tabUrl;
 								}
-								setAttributes( { hmUrlTabVisibility: updated } );
+								// Set a default endpoint when switching to a
+								// condition that requires one.
+								if (
+									( value === 'endpoint-empty' ||
+										value === 'specific-tab' ) &&
+									! updated.endpoint
+								) {
+									updated.endpoint =
+										registeredEndpoints[ 0 ] || 'tab';
+								}
+								setAttributes( {
+									hmUrlTabVisibility: updated,
+								} );
 							} }
 						/>
 
-						{ showEndpointSelector &&
-							( condition === 'specific-tab' ||
-								condition === 'endpoint-empty' ) && (
-								<SelectControl
-									label={ __( 'Endpoint', 'hm-url-tabs' ) }
-									value={ endpoint }
-									options={ endpoints.map( ( ep ) => ( {
-										label: ep,
-										value: ep,
-									} ) ) }
-									onChange={ ( value ) =>
-										setAttributes( {
-											hmUrlTabVisibility: {
-												...hmUrlTabVisibility,
-												endpoint: value,
-											},
-										} )
-									}
-								/>
-							) }
+						{ showEndpointSelector && (
+							<SelectControl
+								label={ __( 'Endpoint', 'hm-url-tabs' ) }
+								value={ endpoint }
+								options={ registeredEndpoints.map( ( ep ) => ( {
+									label: ep,
+									value: ep,
+								} ) ) }
+								onChange={ ( value ) =>
+									setAttributes( {
+										hmUrlTabVisibility: {
+											...hmUrlTabVisibility,
+											endpoint: value,
+										},
+									} )
+								}
+							/>
+						) }
 
 						{ condition === 'specific-tab' && (
 							<SelectControl

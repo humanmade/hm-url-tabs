@@ -97,8 +97,7 @@ add_action( 'wp_enqueue_scripts', function() : void {
  *
  * First checks the query var (set by WordPress rewrite rules).
  * Falls back to parsing the request URI, since some rewrite
- * configurations (e.g. overview on sector archives) don't
- * reliably populate the query var.
+ * configurations don't reliably populate the query var.
  *
  * @param string $endpoint_name The endpoint name to check.
  * @return string|null The endpoint value, empty string if endpoint
@@ -107,10 +106,9 @@ add_action( 'wp_enqueue_scripts', function() : void {
 function get_current_endpoint_value( string $endpoint_name = 'tab' ) : ?string {
 	// Parse the request URI for the endpoint segment. This is more
 	// reliable than get_query_var() because some rewrite configurations
-	// (e.g. overview on sector archives) don't reliably populate the
-	// query var, or WordPress may set it to '' even when the endpoint
-	// is not present in the URL.
-	$request_path = strtok( $_SERVER['REQUEST_URI'] ?? '', '?' );
+	// don't reliably populate the query var, or WordPress may set it to ''
+	// even when the endpoint is not present in the URL.
+	$request_path = strtok( $_SERVER['REQUEST_URI'], '?' );
 	$ep_segment   = '/' . $endpoint_name . '/';
 	$pos          = strpos( $request_path, $ep_segment );
 
@@ -202,7 +200,7 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 		$kind = $block['attrs']['kind'];
 		$endpoint = $block['attrs']['tabEndpoint'] ?? 'tab';
 		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
-		$tab_value = sanitize_title_with_dashes( $block['attrs']['url'] ?? '' );
+		$tab_value = sanitize_title_with_dashes( urldecode( $block['attrs']['url'] ?? '' ) );
 
 		// Get the current page base URL by stripping any registered endpoint
 		// segment. We check all registered endpoints (not just this block's)
@@ -260,7 +258,7 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 		$condition = $visibility['condition'] ?? 'always';
 		$endpoint = $visibility['endpoint'] ?? 'tab';
 		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
-		$tab_value = sanitize_title_with_dashes( $visibility['tabUrl'] ?? '' );
+		$tab_value = sanitize_title_with_dashes( urldecode( $visibility['tabUrl'] ?? '' ) );
 
 		$current_endpoint_value = get_current_endpoint_value( $endpoint );
 
@@ -273,27 +271,21 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 
 			case 'endpoint-empty':
 				// Show only when endpoint is in use but with no value (e.g., /tab).
-				if ( $current_endpoint_value !== '' ) {
+				if ( $current_endpoint_value !== '' || $current_endpoint_value === null ) {
 					$should_hide = true;
 				}
 				break;
 
 			case 'no-endpoint':
-				// Show only when NO registered endpoint is active in the URL.
-				// Check all registered endpoints, not just the one stored in
-				// the block attribute, since it may be stale or irrelevant.
-				$all_endpoints = get_endpoints();
-				foreach ( $all_endpoints as $ep ) {
-					if ( get_current_endpoint_value( $ep['name'] ) !== null ) {
-						$should_hide = true;
-						break;
-					}
+				// Show only when this registered endpoint is not active in the URL.
+				if ( $current_endpoint_value !== null ) {
+					$should_hide = true;
 				}
 				break;
 
 			case 'specific-tab':
 				// Show only when specific tab value matches.
-				if ( sanitize_title_with_dashes( $current_endpoint_value ) !== $tab_value ) {
+				if ( sanitize_title_with_dashes( $current_endpoint_value ?? '' ) !== $tab_value ) {
 					$should_hide = true;
 				}
 				break;
