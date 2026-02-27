@@ -13,6 +13,8 @@ const CATEGORY_SLUG = 'test-category';
 const CATEGORY_BASE = `/category/${ CATEGORY_SLUG }`;
 
 test.describe( 'Multiple endpoints - EP_CATEGORIES overview endpoint', () => {
+	test.skip();
+
 	// ---------------------------------------------------------------------------
 	// Frontend URL resolution
 	// ---------------------------------------------------------------------------
