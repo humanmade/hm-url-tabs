@@ -73,9 +73,20 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Enqueue frontend assets.
+ * Enqueue frontend assets on demand when a tab block is rendered.
+ *
+ * Assets are loaded the first time the render_block filter detects either a tab
+ * navigation link or a block with tab visibility rules. Passing full registration
+ * params here (rather than pre-registering on wp_enqueue_scripts) ensures this
+ * works in block themes where block rendering happens before wp_enqueue_scripts.
  */
-add_action( 'wp_enqueue_scripts', function() : void {
+function enqueue_frontend_assets() : void {
+	static $enqueued = false;
+
+	if ( $enqueued ) {
+		return;
+	}
+
 	$asset = require __DIR__ . '/build/frontend.asset.php';
 	wp_enqueue_script(
 		'hm-url-tabs-frontend',
@@ -90,7 +101,9 @@ add_action( 'wp_enqueue_scripts', function() : void {
 		[],
 		$asset['version']
 	);
-} );
+
+	$enqueued = true;
+}
 
 /**
  * Get the current endpoint value.
@@ -197,6 +210,7 @@ add_filter( 'get_block_type_variations', function( array $variations, object $bl
 add_filter( 'render_block', function( string $block_content, array $block ) : string {
 	// Handle tab navigation links.
 	if ( $block['blockName'] === 'core/navigation-link' && ! empty( $block['attrs']['kind'] ) && in_array( $block['attrs']['kind'], [ 'tab', 'tab-home', 'tab-base' ], true ) ) {
+		enqueue_frontend_assets();
 		$kind = $block['attrs']['kind'];
 		$endpoint = $block['attrs']['tabEndpoint'] ?? 'tab';
 		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
@@ -254,6 +268,7 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 
 	// Handle tab visibility for all other blocks.
 	if ( ! empty( $block['attrs']['hmUrlTabVisibility'] ) ) {
+		enqueue_frontend_assets();
 		$visibility = $block['attrs']['hmUrlTabVisibility'];
 		$condition = $visibility['condition'] ?? 'always';
 		$endpoint = $visibility['endpoint'] ?? 'tab';
