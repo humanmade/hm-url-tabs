@@ -73,18 +73,19 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Enqueue frontend assets.
+ * Register frontend assets on every page load.
+ * Assets are enqueued on demand from render_block when tab blocks are detected.
  */
 add_action( 'wp_enqueue_scripts', function() : void {
 	$asset = require __DIR__ . '/build/frontend.asset.php';
-	wp_enqueue_script(
+	wp_register_script(
 		'hm-url-tabs-frontend',
 		plugins_url( 'build/frontend.js', __FILE__ ),
 		$asset['dependencies'],
 		$asset['version'],
 		true
 	);
-	wp_enqueue_style(
+	wp_register_style(
 		'hm-url-tabs-frontend',
 		plugins_url( 'build/frontend.css', __FILE__ ),
 		[],
@@ -197,6 +198,8 @@ add_filter( 'get_block_type_variations', function( array $variations, object $bl
 add_filter( 'render_block', function( string $block_content, array $block ) : string {
 	// Handle tab navigation links.
 	if ( $block['blockName'] === 'core/navigation-link' && ! empty( $block['attrs']['kind'] ) && in_array( $block['attrs']['kind'], [ 'tab', 'tab-home', 'tab-base' ], true ) ) {
+		wp_enqueue_script( 'hm-url-tabs-frontend' );
+		wp_enqueue_style( 'hm-url-tabs-frontend' );
 		$kind = $block['attrs']['kind'];
 		$endpoint = $block['attrs']['tabEndpoint'] ?? 'tab';
 		$endpoint = ! empty( $endpoint ) ? $endpoint : 'tab';
@@ -254,6 +257,8 @@ add_filter( 'render_block', function( string $block_content, array $block ) : st
 
 	// Handle tab visibility for all other blocks.
 	if ( ! empty( $block['attrs']['hmUrlTabVisibility'] ) ) {
+		wp_enqueue_script( 'hm-url-tabs-frontend' );
+		wp_enqueue_style( 'hm-url-tabs-frontend' );
 		$visibility = $block['attrs']['hmUrlTabVisibility'];
 		$condition = $visibility['condition'] ?? 'always';
 		$endpoint = $visibility['endpoint'] ?? 'tab';
