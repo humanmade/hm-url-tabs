@@ -73,17 +73,11 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Add hmUrlTabVisibility to all block types server-side, mirroring the
- * addTabVisibilityAttributes JS filter in editor.js.
+ * Filter block registration to add hmUrlTabVisibility 
+ * for all block types registered after this point server-side, 
+ * mirroring the addTabVisibilityAttributes JS filter in editor.js.
  *
- * block_type_metadata_settings fires inside register_block_type_from_metadata(),
- * which all register_block_type( 'name', [...] ) calls go through. Adding the
- * attribute here means it is present on the WP_Block_Type object from creation,
- * before it reaches the REST API block renderer schema.
- *
- * The init PHP_INT_MAX sweep is a safety net for blocks registered directly as
- * WP_Block_Type objects, which bypass register_block_type_from_metadata() and
- * so do not trigger the filter above.
+ * Necessary for things like server-side-render previews.  
  */
 add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
 	$name = $settings['name'] ?? $metadata['name'] ?? '';
@@ -103,6 +97,13 @@ add_filter( 'block_type_metadata_settings', function( array $settings, array $me
 	return $settings;
 }, 10, 2 );
 
+/**
+ * Ensure all blocks already registered have the 
+ * hmUrlTabVisibility attribute mirroring the 
+ * addTabVisibilityAttributes JS filter in editor.js.
+ *
+ * Necessary for things like server-side-render previews.  
+ */
 add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
 	foreach ( $registry->get_all_registered() as $block_type ) {
