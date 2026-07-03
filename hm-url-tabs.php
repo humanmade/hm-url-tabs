@@ -97,29 +97,27 @@ function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
 }
 
 /**
- * Add the hmUrlTabVisibility attribute to all block types server-side,
- * mirroring the addTabVisibilityAttributes JS filter in editor.js.
+ * Add hmUrlTabVisibility to all block types server-side, mirroring the
+ * addTabVisibilityAttributes JS filter in editor.js.
  *
- * Without this, the REST API block renderer rejects requests that include
- * hmUrlTabVisibility (e.g. from ServerSideRender), because the server-side
- * schema does not know about the attribute and uses additionalProperties:false.
+ * Registers a registered_block_type hook at init priority 1 so it starts
+ * listening before most blocks are registered (typically priority 9+).
+ * A PHP_INT_MAX sweep at the end of init catches any blocks that were
+ * registered before priority 1.
  *
  * Uses the block name (1 arg) to look up the live registry object — safe on
  * all WordPress versions (the WP_Block_Type second argument was only added
  * in WordPress 6.7).
  */
-add_action( 'registered_block_type', function( string $block_name ) : void {
-	$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
-	if ( $block_type ) {
-		add_tab_visibility_attribute( $block_type );
-	}
-}, 10, 1 );
+add_action( 'init', function() : void {
+	add_action( 'registered_block_type', function( string $block_name ) : void {
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		if ( $block_type ) {
+			add_tab_visibility_attribute( $block_type );
+		}
+	}, 10, 1 );
+}, 1 );
 
-/**
- * Sweep all registered block types at the end of init. This catches any
- * block types that were registered before this plugin's registered_block_type
- * hook was attached (e.g. blocks registered by plugins that loaded earlier).
- */
 add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
 	foreach ( $registry->get_all_registered() as $block_type ) {
