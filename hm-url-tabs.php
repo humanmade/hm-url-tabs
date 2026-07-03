@@ -73,16 +73,12 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Add the hmUrlTabVisibility attribute to all block types server-side,
- * mirroring the addTabVisibilityAttributes JS filter in editor.js.
+ * Add the hmUrlTabVisibility attribute to a single block type object.
  *
- * Without this, the REST API block renderer rejects requests that include
- * hmUrlTabVisibility (e.g. from ServerSideRender), because the server-side
- * schema does not know about the attribute and uses additionalProperties:false.
+ * @param \WP_Block_Type $block_type Block type to modify.
  */
-add_action( 'registered_block_type', function( string $block_name, \WP_Block_Type $block_type ) : void {
-	// Mirror the JS filter: skip navigation-link which has its own attribute set.
-	if ( $block_name === 'core/navigation-link' ) {
+function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
+	if ( $block_type->name === 'core/navigation-link' ) {
 		return;
 	}
 
@@ -98,7 +94,40 @@ add_action( 'registered_block_type', function( string $block_name, \WP_Block_Typ
 			'tabUrl'    => '',
 		],
 	];
-}, 10, 2 );
+}
+
+/**
+ * Add the hmUrlTabVisibility attribute to all block types server-side,
+ * mirroring the addTabVisibilityAttributes JS filter in editor.js.
+ *
+ * Without this, the REST API block renderer rejects requests that include
+ * hmUrlTabVisibility (e.g. from ServerSideRender), because the server-side
+ * schema does not know about the attribute and uses additionalProperties:false.
+ *
+ * Uses the block name (1 arg) to look up the live registry object — safe on
+ * all WordPress versions (the WP_Block_Type second argument was only added
+ * in WordPress 6.7).
+ */
+add_action( 'registered_block_type', function( string $block_name ) : void {
+	$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+	if ( $block_type ) {
+		add_tab_visibility_attribute( $block_type );
+	}
+}, 10, 1 );
+
+/**
+ * Sweep all already-registered block types just before the REST API block
+ * renderer registers its routes (default priority 10). This catches any block
+ * types registered before this plugin loaded, and ensures the attribute is
+ * present when WordPress builds the per-block attributes schema for the
+ * block renderer endpoint.
+ */
+add_action( 'rest_api_init', function() : void {
+	$registry = \WP_Block_Type_Registry::get_instance();
+	foreach ( $registry->get_all_registered() as $block_type ) {
+		add_tab_visibility_attribute( $block_type );
+	}
+}, 1 );
 
 /**
  * Register frontend assets on every page load.
