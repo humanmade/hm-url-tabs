@@ -73,30 +73,6 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Add the hmUrlTabVisibility attribute to a single block type object.
- *
- * @param \WP_Block_Type $block_type Block type to modify.
- */
-function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
-	if ( $block_type->name === 'core/navigation-link' ) {
-		return;
-	}
-
-	if ( ! is_array( $block_type->attributes ) ) {
-		$block_type->attributes = [];
-	}
-
-	$block_type->attributes['hmUrlTabVisibility'] = [
-		'type'    => 'object',
-		'default' => [
-			'condition' => 'always',
-			'endpoint'  => 'tab',
-			'tabUrl'    => '',
-		],
-	];
-}
-
-/**
  * Add hmUrlTabVisibility to all block types server-side, mirroring the
  * addTabVisibilityAttributes JS filter in editor.js.
  *
@@ -104,15 +80,15 @@ function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
  * which all register_block_type( 'name', [...] ) calls go through. Adding the
  * attribute here means it is present on the WP_Block_Type object from creation,
  * before it reaches the REST API block renderer schema.
+ *
+ * The init PHP_INT_MAX sweep is a safety net for blocks registered directly as
+ * WP_Block_Type objects, which bypass register_block_type_from_metadata() and
+ * so do not trigger the filter above.
  */
 add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
 	$name = $settings['name'] ?? $metadata['name'] ?? '';
 	if ( $name === 'core/navigation-link' ) {
 		return $settings;
-	}
-
-	if ( ! isset( $settings['attributes'] ) ) {
-		$settings['attributes'] = [];
 	}
 
 	$settings['attributes']['hmUrlTabVisibility'] = [
@@ -127,15 +103,23 @@ add_filter( 'block_type_metadata_settings', function( array $settings, array $me
 	return $settings;
 }, 10, 2 );
 
-/**
- * Safety-net sweep at the end of init for blocks registered directly as
- * WP_Block_Type objects, which bypass register_block_type_from_metadata()
- * and so do not trigger the block_type_metadata_settings filter above.
- */
 add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
 	foreach ( $registry->get_all_registered() as $block_type ) {
-		add_tab_visibility_attribute( $block_type );
+		if ( $block_type->name === 'core/navigation-link' || isset( $block_type->attributes['hmUrlTabVisibility'] ) ) {
+			continue;
+		}
+		if ( ! is_array( $block_type->attributes ) ) {
+			$block_type->attributes = [];
+		}
+		$block_type->attributes['hmUrlTabVisibility'] = [
+			'type'    => 'object',
+			'default' => [
+				'condition' => 'always',
+				'endpoint'  => 'tab',
+				'tabUrl'    => '',
+			],
+		];
 	}
 }, PHP_INT_MAX );
 
