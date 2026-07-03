@@ -100,8 +100,37 @@ function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
  * Add hmUrlTabVisibility to all block types server-side, mirroring the
  * addTabVisibilityAttributes JS filter in editor.js.
  *
- * Runs at PHP_INT_MAX so all plugins have had a chance to register their
- * blocks during init before we sweep the registry.
+ * block_type_metadata_settings fires inside register_block_type_from_metadata(),
+ * which all register_block_type( 'name', [...] ) calls go through. Adding the
+ * attribute here means it is present on the WP_Block_Type object from creation,
+ * before it reaches the REST API block renderer schema.
+ */
+add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
+	$name = $settings['name'] ?? $metadata['name'] ?? '';
+	if ( $name === 'core/navigation-link' ) {
+		return $settings;
+	}
+
+	if ( ! isset( $settings['attributes'] ) ) {
+		$settings['attributes'] = [];
+	}
+
+	$settings['attributes']['hmUrlTabVisibility'] = [
+		'type'    => 'object',
+		'default' => [
+			'condition' => 'always',
+			'endpoint'  => 'tab',
+			'tabUrl'    => '',
+		],
+	];
+
+	return $settings;
+}, 10, 2 );
+
+/**
+ * Safety-net sweep at the end of init for blocks registered directly as
+ * WP_Block_Type objects, which bypass register_block_type_from_metadata()
+ * and so do not trigger the block_type_metadata_settings filter above.
  */
 add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
