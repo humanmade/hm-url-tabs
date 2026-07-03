@@ -2,7 +2,7 @@
 /**
  * Plugin Name: HM URL Tabs
  * Description: Allows editors to use the core navigation block to create tab-based navigation with rewrite endpoints for conditional block visibility.
- * Version: __VERSION__
+ * Version: Pull Request #3 - Register hmUrlTabVisibility attribute server-side for all block types
  * Author: Human Made Limited
  * Author URI: https://humanmade.com
  * License: GPL-2.0+

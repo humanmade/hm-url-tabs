@@ -1,0 +1,1 @@
+(()=>{"use strict";document.addEventListener("DOMContentLoaded",()=>{const e=document.querySelectorAll("a.hm-url-tab-link");0!==e.length&&e.forEach(e=>{e.addEventListener("click",t=>{t.preventDefault(),document.startViewTransition?document.startViewTransition(()=>{window.location.href=e.href}):window.location.href=e.href})})})})();
