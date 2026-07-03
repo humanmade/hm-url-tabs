@@ -73,6 +73,53 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
+ * Ensure all blocks have the hmUrlTabVisibility attribute
+ * registered server side, mirroring the JS filter in editor.js.
+ *
+ * Necessary for things like server-side-render previews.
+ */
+add_action( 'init', function() : void {
+	$registry = \WP_Block_Type_Registry::get_instance();
+	foreach ( $registry->get_all_registered() as $block_type ) {
+		if ( $block_type->name === 'core/navigation-link' || isset( $block_type->attributes['hmUrlTabVisibility'] ) ) {
+			continue;
+		}
+		if ( ! is_array( $block_type->attributes ) ) {
+			$block_type->attributes = [];
+		}
+		$block_type->attributes['hmUrlTabVisibility'] = [
+			'type'    => 'object',
+			'default' => [
+				'condition' => 'always',
+				'endpoint'  => 'tab',
+				'tabUrl'    => '',
+			],
+		];
+	}
+
+	/**
+	 * Also filter block registration for all block types registered after this point.
+	 */
+	add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
+		$name = $settings['name'] ?? $metadata['name'] ?? '';
+		if ( $name === 'core/navigation-link' ) {
+			return $settings;
+		}
+
+		$settings['attributes']['hmUrlTabVisibility'] = [
+			'type'    => 'object',
+			'default' => [
+				'condition' => 'always',
+				'endpoint'  => 'tab',
+				'tabUrl'    => '',
+			],
+		];
+
+		return $settings;
+	}, 10, 2 );
+}, PHP_INT_MAX );
+
+/**
  * Register frontend assets on every page load.
  * Assets are enqueued on demand from render_block when tab blocks are detected.
  */
