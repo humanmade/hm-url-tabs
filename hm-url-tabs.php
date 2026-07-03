@@ -110,6 +110,13 @@ function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
  * in WordPress 6.7).
  */
 add_action( 'init', function() : void {
+	// Sweep any block types already registered before this point.
+	$registry = \WP_Block_Type_Registry::get_instance();
+	foreach ( $registry->get_all_registered() as $block_type ) {
+		add_tab_visibility_attribute( $block_type );
+	}
+
+	// Watch for any block types registered after this point.
 	add_action( 'registered_block_type', function( string $block_name ) : void {
 		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
 		if ( $block_type ) {
@@ -117,13 +124,6 @@ add_action( 'init', function() : void {
 		}
 	}, 10, 1 );
 }, 1 );
-
-add_action( 'init', function() : void {
-	$registry = \WP_Block_Type_Registry::get_instance();
-	foreach ( $registry->get_all_registered() as $block_type ) {
-		add_tab_visibility_attribute( $block_type );
-	}
-}, PHP_INT_MAX );
 
 /**
  * Register frontend assets on every page load.
