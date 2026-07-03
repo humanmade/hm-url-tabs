@@ -100,30 +100,15 @@ function add_tab_visibility_attribute( \WP_Block_Type $block_type ) : void {
  * Add hmUrlTabVisibility to all block types server-side, mirroring the
  * addTabVisibilityAttributes JS filter in editor.js.
  *
- * Registers a registered_block_type hook at init priority 1 so it starts
- * listening before most blocks are registered (typically priority 9+).
- * A PHP_INT_MAX sweep at the end of init catches any blocks that were
- * registered before priority 1.
- *
- * Uses the block name (1 arg) to look up the live registry object — safe on
- * all WordPress versions (the WP_Block_Type second argument was only added
- * in WordPress 6.7).
+ * Runs at PHP_INT_MAX so all plugins have had a chance to register their
+ * blocks during init before we sweep the registry.
  */
 add_action( 'init', function() : void {
-	// Sweep any block types already registered before this point.
 	$registry = \WP_Block_Type_Registry::get_instance();
 	foreach ( $registry->get_all_registered() as $block_type ) {
 		add_tab_visibility_attribute( $block_type );
 	}
-
-	// Watch for any block types registered after this point.
-	add_action( 'registered_block_type', function( string $block_name ) : void {
-		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
-		if ( $block_type ) {
-			add_tab_visibility_attribute( $block_type );
-		}
-	}, 10, 1 );
-}, 1 );
+}, PHP_INT_MAX );
 
 /**
  * Register frontend assets on every page load.
