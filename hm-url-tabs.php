@@ -73,6 +73,34 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
+ * Add the hmUrlTabVisibility attribute to all block types server-side,
+ * mirroring the addTabVisibilityAttributes JS filter in editor.js.
+ *
+ * Without this, the REST API block renderer rejects requests that include
+ * hmUrlTabVisibility (e.g. from ServerSideRender), because the server-side
+ * schema does not know about the attribute and uses additionalProperties:false.
+ */
+add_action( 'registered_block_type', function( string $block_name, \WP_Block_Type $block_type ) : void {
+	// Mirror the JS filter: skip navigation-link which has its own attribute set.
+	if ( $block_name === 'core/navigation-link' ) {
+		return;
+	}
+
+	if ( ! is_array( $block_type->attributes ) ) {
+		$block_type->attributes = [];
+	}
+
+	$block_type->attributes['hmUrlTabVisibility'] = [
+		'type'    => 'object',
+		'default' => [
+			'condition' => 'always',
+			'endpoint'  => 'tab',
+			'tabUrl'    => '',
+		],
+	];
+}, 10, 2 );
+
+/**
  * Register frontend assets on every page load.
  * Assets are enqueued on demand from render_block when tab blocks are detected.
  */
