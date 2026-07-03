@@ -116,18 +116,16 @@ add_action( 'registered_block_type', function( string $block_name ) : void {
 }, 10, 1 );
 
 /**
- * Sweep all already-registered block types just before the REST API block
- * renderer registers its routes (default priority 10). This catches any block
- * types registered before this plugin loaded, and ensures the attribute is
- * present when WordPress builds the per-block attributes schema for the
- * block renderer endpoint.
+ * Sweep all registered block types at the end of init. This catches any
+ * block types that were registered before this plugin's registered_block_type
+ * hook was attached (e.g. blocks registered by plugins that loaded earlier).
  */
-add_action( 'rest_api_init', function() : void {
+add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
 	foreach ( $registry->get_all_registered() as $block_type ) {
 		add_tab_visibility_attribute( $block_type );
 	}
-}, 1 );
+}, PHP_INT_MAX );
 
 /**
  * Register frontend assets on every page load.
