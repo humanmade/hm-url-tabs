@@ -73,36 +73,10 @@ add_action( 'enqueue_block_editor_assets', function() : void {
 } );
 
 /**
- * Filter block registration to add hmUrlTabVisibility 
- * for all block types registered after this point server-side, 
- * mirroring the addTabVisibilityAttributes JS filter in editor.js.
+ * Ensure all blocks have the hmUrlTabVisibility attribute
+ * registered server side, mirroring the JS filter in editor.js.
  *
- * Necessary for things like server-side-render previews.  
- */
-add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
-	$name = $settings['name'] ?? $metadata['name'] ?? '';
-	if ( $name === 'core/navigation-link' ) {
-		return $settings;
-	}
-
-	$settings['attributes']['hmUrlTabVisibility'] = [
-		'type'    => 'object',
-		'default' => [
-			'condition' => 'always',
-			'endpoint'  => 'tab',
-			'tabUrl'    => '',
-		],
-	];
-
-	return $settings;
-}, 10, 2 );
-
-/**
- * Ensure all blocks already registered have the 
- * hmUrlTabVisibility attribute mirroring the 
- * addTabVisibilityAttributes JS filter in editor.js.
- *
- * Necessary for things like server-side-render previews.  
+ * Necessary for things like server-side-render previews.
  */
 add_action( 'init', function() : void {
 	$registry = \WP_Block_Type_Registry::get_instance();
@@ -122,6 +96,27 @@ add_action( 'init', function() : void {
 			],
 		];
 	}
+
+	/**
+	 * Also filter block registration for all block types registered after this point.
+	 */
+	add_filter( 'block_type_metadata_settings', function( array $settings, array $metadata ) : array {
+		$name = $settings['name'] ?? $metadata['name'] ?? '';
+		if ( $name === 'core/navigation-link' ) {
+			return $settings;
+		}
+
+		$settings['attributes']['hmUrlTabVisibility'] = [
+			'type'    => 'object',
+			'default' => [
+				'condition' => 'always',
+				'endpoint'  => 'tab',
+				'tabUrl'    => '',
+			],
+		];
+
+		return $settings;
+	}, 10, 2 );
 }, PHP_INT_MAX );
 
 /**
