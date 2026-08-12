@@ -11,6 +11,9 @@ permissions:
 jobs:
     build-and-preview:
         runs-on: ubuntu-latest
+        # Fork PRs get a read-only token, so the branch push would fail. Skip
+        # rather than failing the check.
+        if: github.event.pull_request.head.repo.full_name == github.repository
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -25,27 +28,34 @@ jobs:
               run: npm i
 
             - name: Replace version with PR info
+              env:
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
               run: |
-                  # Create PR version string
-                  PR_VERSION="Pull Request #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}"
+                  # PR_NUMBER is numeric, so this is safe to interpolate. Never
+                  # interpolate the PR title — it is attacker controlled and
+                  # would run as shell on the runner.
+                  PR_VERSION="0.0.0-pr${PR_NUMBER}"
 
                   # Replace __VERSION__ in plugin file
-                  sed -i "s/__VERSION__/$PR_VERSION/g" hm-url-tabs.php
+                  sed -i "s/__VERSION__/${PR_VERSION}/g" hm-url-tabs.php
 
-                  echo "Updated plugin version to: $PR_VERSION"
-                  cat hm-url-tabs.php | grep "Version:"
+                  echo "Updated plugin version to: ${PR_VERSION}"
+                  grep "Version:" hm-url-tabs.php
 
             - name: Build plugin
               run: npm run build
 
             - name: Push built files to PR branch
+              env:
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
               run: |
                   # Configure git
                   git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "github-actions[bot]"
 
                   # Create and checkout a new branch for this PR's built files
-                  BRANCH_NAME="pr-${{ github.event.pull_request.number }}-built"
+                  BRANCH_NAME="pr-${PR_NUMBER}-built"
 
                   # Create/recreate the branch from current state
                   git checkout -B "$BRANCH_NAME"
@@ -58,7 +68,7 @@ jobs:
                   if git diff --staged --quiet; then
                     echo "No changes to commit"
                   else
-                    git commit -m "Build assets for PR #${{ github.event.pull_request.number }} (commit: ${{ github.event.pull_request.head.sha }})"
+                    git commit -m "Build assets for PR #${PR_NUMBER} (commit: ${HEAD_SHA})"
                     git push origin "$BRANCH_NAME" --force
                   fi
 
