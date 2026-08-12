@@ -168,6 +168,24 @@ add_filter( 'hm_url_tabs_endpoints', function( $endpoints ) {
 
 **Note**: Tab URL slugs are automatically lowercased for consistency (e.g., "Settings" becomes `/tab/settings/`). All generated URLs include a trailing slash.
 
+## Release Process
+
+Releases are cut manually via GitHub Actions. Each release builds the plugin, stamps the version into the source, and creates an **immutable tag** that already points at the built, versioned code — the tag is created exactly once and is never moved or force-pushed, so Packagist accepts it without conflict.
+
+### Creating a Release
+
+1. [Go to the Actions tab and select the **Release** workflow](https://github.com/humanmade/hm-url-tabs/actions/workflows/release.yml)
+2. Click **Run workflow** and enter the version to cut, without a leading `v` (e.g. `1.2.3`). Versions must follow semantic versioning (`X.Y.Z`).
+3. Run the workflow. It will automatically:
+   - Validate the version format and fail if the tag already exists (tags are immutable)
+   - Build the production assets (`npm ci && npm run build`)
+   - Replace the `__VERSION__` placeholder in `hm-url-tabs.php` with the version
+   - Commit the built, versioned code and create the tag (e.g. `v1.2.3`), pushing only the tag
+   - Build a production ZIP with `git archive` (honouring the `.gitattributes` export-ignore rules, so dev files are excluded and the compiled `build/` directory is included)
+   - Publish a GitHub release with auto-generated notes and the ZIP attached
+
+Because tags are never re-tagged or force-pushed, bumping a release means running the workflow again with a new version number.
+
 ## License
 
 GPL-2.0-or-later
